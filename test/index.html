@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Lu Test Page</title>
+
+	<link href="/mocha/mocha.css" rel="stylesheet">
+</head>
+<body>
+	<div id="mocha"></div>
+
+	<script>
+		/* global fetch*/
+		window.setInterval(() => {
+			fetch('/status')
+				.then(result => {
+					if (JSON.parse(result).changed) {
+						window.location.reload();
+					}
+				});
+		}, 1000);
+	</script>
+
+	<script src="/template/template.js"></script>
+
+	<script src="/mocha/mocha.js"></script>
+	<script src="/chai/chai.js"></script>
+
+	<script>
+		/* global mocha, chai, expect */
+		mocha.setup('bdd');
+		window.expect = chai.expect;
+	</script>
+
+	{tests}
+
+	<script>
+		/* global mocha, chai */
+		mocha.checkLeaks();
+		mocha.globals(['jQuery']);
+		mocha.run();
+	</script>
+</body>
+</html>
