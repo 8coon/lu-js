@@ -1,7 +1,4 @@
-'use strict';
-/* global describe, it */
-
-const expect = window.expect;
+/* global describe, it, expect */
 
 
 describe('Template', () => {

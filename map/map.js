@@ -1,16 +1,14 @@
-'use strict';
 
-
-function ArrayMap() {
+const ArrayMap = function ArrayMap() {
     this.byLength = {};
-}
+};
 
 
 Object.assign(ArrayMap.prototype, {
 
     prepare(key) {
-        const byLength = this.byLength[key.length];
-        this.byLength[key.length] = byLength || {};
+        const byLength = this.byLength[key.length] || {};
+        this.byLength[key.length] = byLength;
 
         const byFirst = byLength[key[0]];
         byLength[key[0]] = byFirst || {keys: [], values: []};

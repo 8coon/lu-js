@@ -34,7 +34,20 @@ app.get('/', (request, response) => {
 
 app.use('/mocha', express.static('./node_modules/mocha/'));
 app.use('/chai', express.static('./node_modules/chai/'));
+
 app.use('/template', express.static('./template/'));
+app.use('/map', express.static('./map/'));
 
 
-app.listen(3000);
+const watcher = () => {
+	changed = true;
+};
+
+watch('./template', {recursive: true}, watcher);
+watch('./map', {recursive: true}, watcher);
+watch('./test', {recursive: true}, watcher);
+
+
+app.listen(3000, () => {
+	console.log('Running dev server on port 3000');
+});

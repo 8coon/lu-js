@@ -1,6 +1,5 @@
-'use strict';
+const Map = ArrayMap || require('../map/map');
 
-const Map = require('../map/map');
 
 // Regexps
 const TAG_MATCH = '<[^<>]*>';

@@ -13,14 +13,16 @@
 		/* global fetch*/
 		window.setInterval(() => {
 			fetch('/status')
+				.then(result => result.json())
 				.then(result => {
-					if (JSON.parse(result).changed) {
+					if (result.changed) {
 						window.location.reload();
 					}
 				});
 		}, 1000);
 	</script>
 
+	<script src="/map/map.js"></script>
 	<script src="/template/template.js"></script>
 
 	<script src="/mocha/mocha.js"></script>
@@ -29,7 +31,8 @@
 	<script>
 		/* global mocha, chai, expect */
 		mocha.setup('bdd');
-		window.expect = chai.expect;
+		expect = chai.expect;
+		module = {};
 	</script>
 
 	{tests}
