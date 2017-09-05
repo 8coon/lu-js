@@ -18,13 +18,15 @@ const VALUE_MATCH = '\\x1E';
 /**
  * Template Node
  * @param {string[]|Node[]} children
+ * @param {{cached: boolean}} options
  * @constructor {Node}
  */
-function Node(children) {
+function Node(children, options) {
     this.tag = '';
     this.children = children;
     this.props = {};
     this.style = {};
+    this.cached = options && options.cached;
 }
 
 Object.assign(Node.prototype, {
@@ -109,13 +111,13 @@ const childrenT = (content, values) => {
 };
 
 
-const matchT = (literal, values) => {
+const matchT = (literal, values, options) => {
     let matches;
 
     // If we got a self-closing tag
     matches = literal.match(new RegExp(`^\\s*${TAG_SHORT_NAME_MATCH}\\s*$`));
     if (matches) {
-        const node = new Node([]);
+        const node = new Node([], options);
 
         node.tag = tagT(matches[1]);
         node.setProps(propsT(matches[1], values));
@@ -126,7 +128,7 @@ const matchT = (literal, values) => {
     // We got a normal tag probably with a content
     matches = literal.match(new RegExp(`^\\s*${TAG_NAME_MATCH}(.*)${TAG_CLOSING_NAME_MATCH}\\s*$`));
     if (matches && matches[1].toLowerCase() === matches[3].toLowerCase()) {
-        const node = new Node(childrenT(matches[2]));
+        const node = new Node(childrenT(matches[2]), options);
 
         node.tag = tagT(matches[1]);
         node.setProps(propsT(matches[1], values));
@@ -139,20 +141,14 @@ const matchT = (literal, values) => {
 };
 
 
-let rendered = new Map();
+const rendered = new Map();
 
 const b = (literals, ...values) => {
     const cached = rendered.get(literals);
 
     // If the template was cached
     if (cached !== void 0) {
-        const match = matchT(cached, values);
-
-        if (typeof match === 'object') {
-            Object.assign(match, {cached: true});
-        }
-
-        return match;
+        return matchT(cached, values, {cached: true});
     }
 
     // Merge literals and values
