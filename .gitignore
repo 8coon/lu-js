@@ -1,3 +1,4 @@
 .idea
 node_modules
 iu-js.iml
+.DS_Store
