@@ -4,38 +4,21 @@
 	<meta charset="UTF-8">
 	<title>Lu Test Page</title>
 
-	<link href="/mocha/mocha.css" rel="stylesheet">
+	<link href="/node_modules/mocha/mocha.css" rel="stylesheet">
+	<script src="/node_modules/mocha/mocha.js"></script>
+	<script src="/node_modules/chai/chai.js"></script>
+	<script src="/dist/lou.min.js"></script>
 </head>
 <body>
 	<div id="mocha"></div>
 
 	<script>
-		/* global fetch*/
-		window.setInterval(() => {
-			fetch('/status')
-				.then(result => result.json())
-				.then(result => {
-					if (result.changed) {
-						window.location.reload();
-					}
-				});
-		}, 1000);
-	</script>
-
-	<script src="/map/map.js"></script>
-	<script src="/template/template.js"></script>
-
-	<script src="/mocha/mocha.js"></script>
-	<script src="/chai/chai.js"></script>
-
-	<script>
 		/* global mocha, chai, expect */
 		mocha.setup('bdd');
 		expect = chai.expect;
-		module = {};
 	</script>
 
-	{tests}
+	<script src="index.js"></script>
 
 	<script>
 		/* global mocha, chai */

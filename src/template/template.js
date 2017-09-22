@@ -1,4 +1,6 @@
-const Map = ArrayMap || require('../map/map');
+'use strict';
+
+import Map from '../map/map';
 
 
 // Regexps
@@ -20,7 +22,7 @@ const VALUE_MATCH = '\\x1E';
  * @param {{cached: boolean}} options
  * @constructor {Node}
  */
-function Node(children, options) {
+export function Node(children, options) {
     this.tag = '';
     this.children = children;
     this.props = {};
@@ -140,28 +142,33 @@ const matchT = (literal, values, options) => {
 };
 
 
-const rendered = new Map();
+/**
+ * @param {{blocks?: Map<string, function(name: string, node: Node)>}} options
+ */
+export default function Lou(options = {}) {
+    const rendered = new Map();
+    const blocks = options.blocks || {};
 
-const b = (literals, ...values) => {
-    const cached = rendered.get(literals);
+    return (literals, ...values) => {
+        const cached = rendered.get(literals);
 
-    // If the template was cached
-    if (cached !== void 0) {
-        return matchT(cached, values, {cached: true});
-    }
+        // If the template was cached
+        if (cached !== void 0) {
+            return matchT(cached, values, {cached: true});
+        }
 
-    // Merge literals and values
-    const merged = literals
-        .map(literal => literal.replace(new RegExp(`${VALUE_MATCH}\\r\\n`), ''))
-        .map((literal, idx) => literal + serializeValue(literal, values[idx], idx))
-        .join('');
+        // Merge literals and values
+        const merged = literals
+            .map(literal => literal.replace(new RegExp(`${VALUE_MATCH}\\r\\n`), ''))
+            .map((literal, idx) => literal + serializeValue(literal, values[idx], idx))
+            .join('');
 
-    // Cache compiled template
-    rendered.set(literals, merged);
+        // Cache compiled template
+        rendered.set(literals, merged);
 
-    // Parse the whole thing
-    return matchT(merged, values);
+        // Parse the whole thing
+        return matchT(merged, values);
+    };
 };
 
-
-module.exports = b;
+window.Lou = Lou;

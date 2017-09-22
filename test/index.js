@@ -1,53 +1,66 @@
-const watch = require('node-watch');
-const express = require('express');
-const fs = require('fs');
+/* global describe, it, expect, Lou */
 
 
-const app = express();
-let changed = false;
+describe('Template', () => {
+    const b = Lou();
 
+    it('should return object', () => {
+		expect(typeof b`<div/>` === 'object', 'b returns object');
+    });
 
-const findTests = (dir, first = true) => fs.readdirSync(dir, 'utf8')
-	.reduce((tests, testFile) => {
-		const filename = `${dir}/${testFile}`;
+    it('should return vdom node with tag name specified', () => {
+		expect((b`<div/>`).tag === 'div', 'tag name is div');
+		expect((b`<div></div>`).tag === 'div', 'tag name is div');
+    });
 
-		if (fs.statSync(filename).isDirectory()) {
-			tests.push(...findTests(filename, false));
-		} else if (!first) {
-			tests.push(`<script>${fs.readFileSync(filename, 'utf8')}</script>`);
-		}
+    it('should return vdom node with children 1', () => {
+        const node = b`<div>lol kek<div/></div>`;
 
-		return tests;
-	}, [])
-	.join('');
+		expect(node.tag === 'div', 'tag name is div');
+		expect(node.children.length === 2, 'node has children');
+		expect(node.children[0] === 'lol kek', 'node has correct text child');
+		expect(node.children[1].tag === 'div', 'node has correct node child');
+    });
 
+    it('should return vdom node with children 2', () => {
+        const node = b`<div>lol kek<div>cheburek</div></div>`;
 
-app.get('/status', (request, response) => {
-	response.send(JSON.stringify({changed}));
-});
+		expect(node.tag === 'div', 'tag name is div');
+		expect(node.children[1].children.length === 1, 'node has children');
+		expect(node.children[1].children[0] === 'cheburek', 'node has correct child');
+    });
 
+    it('should return vdom node with children 3', () => {
+        const node = b`<div>lol kek<div>cheburek<div>lol</div></div></div>`;
 
-app.get('/', (request, response) => {
-	changed = false;
-	response.send(fs.readFileSync('./test/index.html', 'utf8').replace('{tests}', findTests('./test/')));
-});
+		expect(node.tag === 'div', 'tag name is div');
+		expect(node.children[1].children[1].children.length === 1, 'node has children');
+		expect(node.children[1].children[1].children[0] === 'lol', 'node has correct child');
+    });
 
-app.use('/mocha', express.static('./node_modules/mocha/'));
-app.use('/chai', express.static('./node_modules/chai/'));
+    it('should substitute values and parse props', () => {
+        const node = b`<div 
+            lol kek="1 2 3" prop="${'value'}"/>`;
 
-app.use('/template', express.static('./template/'));
-app.use('/map', express.static('./map/'));
+		expect(node.tag === 'div', 'tag name is div');
+		expect(node.children.length === 0, 'node has no children');
+		expect(node.props.lol === true, 'props.lol is true');
+		expect(node.props.kek === '1 2 3', 'props.kek is 1 2 3');
+		expect(node.props.prop === 'value', 'props.prop is value');
+    });
 
+    it('should substitute values and parse style', () => {
+        const node = b`<div style="${{backgroundColor: 'rgb(240, 255, 255)'}}"/>`;
 
-const watcher = () => {
-	changed = true;
-};
+		expect(node.style, 'node has style');
+		expect(node.style.backgroundColor === 'rgb(240, 255, 255)', 'node background color is rgb(240, 255, 255)');
+    });
 
-watch('./template', {recursive: true}, watcher);
-watch('./map', {recursive: true}, watcher);
-watch('./test', {recursive: true}, watcher);
+    it('should cache rendered templates', () => {
+        b`<div kek style="${{backgroundColor: 'rgb(240, 255, 255)'}}"/>`;
+        const node2 = b`<div kek style="${{backgroundColor: 'rgb(240, 255, 255)'}}"/>`;
 
+		expect(node2.cached === true, 'template is cached');
+    });
 
-app.listen(3000, () => {
-	console.log('Running dev server on port 3000');
 });

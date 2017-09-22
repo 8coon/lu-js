@@ -56,4 +56,4 @@ Object.assign(ArrayMap.prototype, {
 });
 
 
-module.exports = Map || ArrayMap;
+export default ArrayMap;
