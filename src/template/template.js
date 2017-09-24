@@ -35,12 +35,12 @@ export function Node(children, options) {
     }
 }
 
-const serializeValue = (literal, value, idx) => {
-    if (typeof value === 'object' || typeof value === 'function') {
-        return `${VALUE_STR}${idx}${VALUE_STR}`
+const serializeValue = (literal, value, idx, values) => {
+    if (idx >= values.length) {
+        return '';
     }
 
-    return String(value || '');
+    return `${VALUE_STR}${idx}${VALUE_STR}`;
 };
 
 
@@ -104,13 +104,22 @@ const childrenT = (content, values, options) => {
 
     return matches
         .map(match => matchT(parseValue(match, values), values, options))
+        .reduce((nodes, match) => {
+            if (match && (match[0]) instanceof Node) {
+                nodes.push(...match);
+            } else {
+                nodes.push(match);
+            }
+
+            return nodes;
+        }, [])
         .filter(node => typeof node === 'object' || typeof node === 'string' && node.length > 0);
 };
 
 
 const matchT = (literal, values, options) => {
     // If we got a node instance -- insert it in our JSON
-    if (literal instanceof Node) {
+    if (literal instanceof Node || literal[0] instanceof Node) {
         return literal;
     }
 
@@ -172,6 +181,11 @@ export default function Lou(options = {}) {
     const node = options.node;
 
     return (literals, ...values) => {
+        // Array of nodes -- return
+        if (literals[0] instanceof Node) {
+            return literals;
+        }
+
         const cached = rendered.get(literals);
 
         // If the template was cached
@@ -182,7 +196,7 @@ export default function Lou(options = {}) {
         // Merge literals and values
         const merged = literals
             .map(literal => literal.trim().replace(new RegExp(`[${VALUE_MATCH}\\r\\n\\t]`, 'g'), ''))
-            .map((literal, idx) => literal + serializeValue(literal, values[idx], idx))
+            .map((literal, idx) => literal + serializeValue(literal, values[idx], idx, values))
             .join('');
 
         // Cache compiled template

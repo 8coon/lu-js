@@ -196,5 +196,16 @@
             expect(node.children[0].attrs.href === location.href, 'inner node is parsed 2');
         });
 
+        it('should handle array insertions', () => {
+            const b = Lou();
+
+            const node = b`<div>${['Alice', 'Bob'].map(name => b`<a href="#">${name}</a>`)}</div>`;
+
+            expect(node.tag === 'div', 'node is rendered');
+            expect(node.children.length === 2, 'children are of proper length');
+            expect(node.children[0].children[0] === 'Alice', 'Alice is rendered');
+            expect(node.children[1].children[0] === 'Bob', 'Bob is rendered');
+        });
+
     });
 });

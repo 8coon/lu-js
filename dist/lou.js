@@ -112,6 +112,8 @@ var _map2 = _interopRequireDefault(_map);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 // Regexps
@@ -145,16 +147,18 @@ function Node(children, options) {
     }
 }
 
-var serializeValue = function serializeValue(literal, value, idx) {
-    if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' || typeof value === 'function') {
-        return '' + VALUE_STR + idx + VALUE_STR;
+var serializeValue = function serializeValue(literal, value, idx, values) {
+    if (idx >= values.length) {
+        return '';
     }
 
-    return String(value || '');
+    return '' + VALUE_STR + idx + VALUE_STR;
 };
 
 var parseValue = function parseValue(value, values) {
     var matches = value.match(new RegExp('^' + VALUE_MATCH + '(\\d*)' + VALUE_MATCH + '$'));
+
+    console.log(value, matches);
 
     // If value is plain text
     if (!matches) {
@@ -210,14 +214,22 @@ var childrenT = function childrenT(content, values, options) {
 
     return matches.map(function (match) {
         return matchT(parseValue(match, values), values, options);
-    }).filter(function (node) {
+    }).reduce(function (nodes, match) {
+        if (match && match[0] instanceof Node) {
+            nodes.push.apply(nodes, _toConsumableArray(match));
+        } else {
+            nodes.push(match);
+        }
+
+        return nodes;
+    }, []).filter(function (node) {
         return (typeof node === 'undefined' ? 'undefined' : _typeof(node)) === 'object' || typeof node === 'string' && node.length > 0;
     });
 };
 
 var matchT = function matchT(literal, values, options) {
     // If we got a node instance -- insert it in our JSON
-    if (literal instanceof Node) {
+    if (literal instanceof Node || literal[0] instanceof Node) {
         return literal;
     }
 
@@ -284,6 +296,11 @@ function Lou() {
             values[_key - 1] = arguments[_key];
         }
 
+        // Array of nodes -- return
+        if (literals[0] instanceof Node) {
+            return literals;
+        }
+
         var cached = rendered.get(literals);
 
         // If the template was cached
@@ -295,7 +312,7 @@ function Lou() {
         var merged = literals.map(function (literal) {
             return literal.trim().replace(new RegExp('[' + VALUE_MATCH + '\\r\\n\\t]', 'g'), '');
         }).map(function (literal, idx) {
-            return literal + serializeValue(literal, values[idx], idx);
+            return literal + serializeValue(literal, values[idx], idx, values);
         }).join('');
 
         // Cache compiled template
