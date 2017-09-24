@@ -95,7 +95,7 @@ const tagT = match => match.match(/^([A-Za-z0-9_-]*)/)[1] || '';
 
 
 const childrenT = (content, values, options) => {
-    let matches = content.match(new RegExp(`${TAG_SHORT_MATCH}|${TAG_MATCH}.*${TAG_CLOSING_MATCH}|${VALUE_MATCH}\\d*${VALUE_MATCH}|([^<>]*)`, 'g'));
+    let matches = content.match(new RegExp(`${TAG_SHORT_MATCH}|${TAG_MATCH}.*?${TAG_CLOSING_MATCH}|${VALUE_MATCH}\\d*${VALUE_MATCH}|([^<>]*)`, 'g'));
 
     // If no suitable child found
     if (!matches) {
