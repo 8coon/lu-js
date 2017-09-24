@@ -1,7 +1,7 @@
 {
   "name": "lou-js",
   "description": "Lou -- simple js template engine",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": "https://github.com/8coon/lu-js",
   "author": "Kaibito Young",
   "license": "MIT",
