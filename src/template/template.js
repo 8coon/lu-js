@@ -25,22 +25,9 @@ const VALUE_MATCH = '\\x1E';
 export function Node(children, options) {
     this.tag = '';
     this.children = children;
-    this.props = {};
-    this.style = {};
+    this.attrs = {};
     this.cached = options && options.cached;
 }
-
-Object.assign(Node.prototype, {
-
-    setProps(props) {
-        const style = props.style;
-        delete props.style;
-
-        this.props = props;
-        this.style = style || {};
-    }
-
-});
 
 const serializeValue = (literal, value, idx) => {
     if (typeof value === 'object' || typeof value === 'function') {
@@ -63,7 +50,7 @@ const parseValue = (value, values) => {
 };
 
 
-const propsT = (match, values) => {
+const attrsT = (match, values) => {
     let matches = match.match(/(?:(?=")(".*?")|([\w=]*))/g);
 
     return matches
@@ -98,7 +85,7 @@ const propsT = (match, values) => {
 const tagT = match => match.match(/^([A-Za-z0-9_-]*)/)[1] || '';
 
 
-const childrenT = (content, values) => {
+const childrenT = (content, values, options) => {
     let matches = content.match(new RegExp(`${TAG_MATCH}.*${TAG_CLOSING_MATCH}|${TAG_SHORT_MATCH}|([^<>]*)`, 'g'));
 
     // If no suitable child found
@@ -107,34 +94,46 @@ const childrenT = (content, values) => {
     }
 
     return matches
-        .map(match => matchT(match, values))
+        .map(match => matchT(match, values, options))
         .filter(node => typeof node === 'object' || typeof node === 'string' && node.length > 0);
 };
 
 
 const matchT = (literal, values, options) => {
+    const parseTagT = (tag, content, children) => {
+        const tags = options.tags;
+        const attrs = attrsT(content, values);
+
+        if (tags[tag]) {
+            return (tags[tag])(tag, attrs, children);
+        }
+
+        const node = new Node(children || [], options);
+
+        node.tag = tag;
+        node.attrs = attrs;
+
+        return node;
+    };
+
     let matches;
 
     // If we got a self-closing tag
     matches = literal.match(new RegExp(`^\\s*${TAG_SHORT_NAME_MATCH}\\s*$`));
     if (matches) {
-        const node = new Node([], options);
-
-        node.tag = tagT(matches[1]);
-        node.setProps(propsT(matches[1], values));
-
-        return node;
+        return parseTagT(tagT(matches[1]), matches[1]);
     }
 
     // We got a normal tag probably with a content
     matches = literal.match(new RegExp(`^\\s*${TAG_NAME_MATCH}(.*)${TAG_CLOSING_NAME_MATCH}\\s*$`));
-    if (matches && matches[1].toLowerCase() === matches[3].toLowerCase()) {
-        const node = new Node(childrenT(matches[2]), options);
+    let tagName;
 
-        node.tag = tagT(matches[1]);
-        node.setProps(propsT(matches[1], values));
+    if (matches && matches[1]) {
+        tagName = tagT(matches[1]);
+    }
 
-        return node;
+    if (tagName) {
+        return parseTagT(tagName, matches[1], childrenT(matches[2], values, options));
     }
 
     // Plain text
@@ -143,18 +142,29 @@ const matchT = (literal, values, options) => {
 
 
 /**
- * @param {{blocks?: Map<string, function(name: string, node: Node)>}} options
+ * @param {{
+ *      render: 'json'|'dom'|function(root: Node)
+ *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
+ *
+ * }} options
  */
 export default function Lou(options = {}) {
     const rendered = new Map();
-    const blocks = options.blocks || {};
+
+    let render = options.render || 'json';
+    const tags = options.tags || {};
+
+    switch (render) {
+        case 'json': render = root => root; break;
+        case 'dom': render = root => document.createElement('DIV'); break;
+    }
 
     return (literals, ...values) => {
         const cached = rendered.get(literals);
 
         // If the template was cached
         if (cached !== void 0) {
-            return matchT(cached, values, {cached: true});
+            return render(matchT(cached, values, {cached: true, tags}));
         }
 
         // Merge literals and values
@@ -167,7 +177,7 @@ export default function Lou(options = {}) {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return matchT(merged, values);
+        return render(matchT(merged, values, {tags}));
     };
 };
 

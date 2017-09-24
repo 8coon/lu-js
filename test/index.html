@@ -7,9 +7,17 @@
 	<link href="/node_modules/mocha/mocha.css" rel="stylesheet">
 	<script src="/node_modules/mocha/mocha.js"></script>
 	<script src="/node_modules/chai/chai.js"></script>
-	<script src="/dist/lou.min.js"></script>
 </head>
 <body>
+	<script src="/dist/lou.js"></script>
+	<script>
+		window.LouNormal = window.Lou;
+	</script>
+	<script src="/dist/lou.min.js"></script>
+	<script>
+        window.LouMinified = window.Lou;
+	</script>
+
 	<div id="mocha"></div>
 
 	<script>
@@ -23,7 +31,6 @@
 	<script>
 		/* global mocha, chai */
 		mocha.checkLeaks();
-		mocha.globals(['jQuery']);
 		mocha.run();
 	</script>
 </body>

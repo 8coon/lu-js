@@ -19,13 +19,12 @@ module.exports = {
         ]
     },
     devServer: {
-        hot: true,
-        inline: true,
+        hot: false,
+        inline: false,
         port: 3000,
         contentBase: [
             './',
             './test'
-        ],
-        open: true
+        ]
     }
 };

@@ -127,20 +127,9 @@ var VALUE_MATCH = '\\x1E';
 function Node(children, options) {
     this.tag = '';
     this.children = children;
-    this.props = {};
-    this.style = {};
+    this.attrs = {};
     this.cached = options && options.cached;
 }
-
-Object.assign(Node.prototype, {
-    setProps: function setProps(props) {
-        var style = props.style;
-        delete props.style;
-
-        this.props = props;
-        this.style = style || {};
-    }
-});
 
 var serializeValue = function serializeValue(literal, value, idx) {
     if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object' || typeof value === 'function') {
@@ -161,7 +150,7 @@ var parseValue = function parseValue(value, values) {
     return values[parseInt(matches[1], 10)];
 };
 
-var propsT = function propsT(match, values) {
+var attrsT = function attrsT(match, values) {
     var matches = match.match(/(?:(?=")(".*?")|([\w=]*))/g);
 
     return matches.slice(1).reduce(function (props, match, idx, array) {
@@ -194,7 +183,7 @@ var tagT = function tagT(match) {
     return match.match(/^([A-Za-z0-9_-]*)/)[1] || '';
 };
 
-var childrenT = function childrenT(content, values) {
+var childrenT = function childrenT(content, values, options) {
     var matches = content.match(new RegExp(TAG_MATCH + '.*' + TAG_CLOSING_MATCH + '|' + TAG_SHORT_MATCH + '|([^<>]*)', 'g'));
 
     // If no suitable child found
@@ -203,35 +192,47 @@ var childrenT = function childrenT(content, values) {
     }
 
     return matches.map(function (match) {
-        return matchT(match, values);
+        return matchT(match, values, options);
     }).filter(function (node) {
         return (typeof node === 'undefined' ? 'undefined' : _typeof(node)) === 'object' || typeof node === 'string' && node.length > 0;
     });
 };
 
 var matchT = function matchT(literal, values, options) {
+    var parseTagT = function parseTagT(tag, content, children) {
+        var tags = options.tags;
+        var attrs = attrsT(content, values);
+
+        if (tags[tag]) {
+            return tags[tag](tag, attrs, children);
+        }
+
+        var node = new Node(children || [], options);
+
+        node.tag = tag;
+        node.attrs = attrs;
+
+        return node;
+    };
+
     var matches = void 0;
 
     // If we got a self-closing tag
     matches = literal.match(new RegExp('^\\s*' + TAG_SHORT_NAME_MATCH + '\\s*$'));
     if (matches) {
-        var node = new Node([], options);
-
-        node.tag = tagT(matches[1]);
-        node.setProps(propsT(matches[1], values));
-
-        return node;
+        return parseTagT(tagT(matches[1]), matches[1]);
     }
 
     // We got a normal tag probably with a content
     matches = literal.match(new RegExp('^\\s*' + TAG_NAME_MATCH + '(.*)' + TAG_CLOSING_NAME_MATCH + '\\s*$'));
-    if (matches && matches[1].toLowerCase() === matches[3].toLowerCase()) {
-        var _node = new Node(childrenT(matches[2]), options);
+    var tagName = void 0;
 
-        _node.tag = tagT(matches[1]);
-        _node.setProps(propsT(matches[1], values));
+    if (matches && matches[1]) {
+        tagName = tagT(matches[1]);
+    }
 
-        return _node;
+    if (tagName) {
+        return parseTagT(tagName, matches[1], childrenT(matches[2], values, options));
     }
 
     // Plain text
@@ -239,13 +240,30 @@ var matchT = function matchT(literal, values, options) {
 };
 
 /**
- * @param {{blocks?: Map<string, function(name: string, node: Node)>}} options
+ * @param {{
+ *      render: 'json'|'dom'|function(root: Node)
+ *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
+ *
+ * }} options
  */
 function Lou() {
     var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
     var rendered = new _map2.default();
-    var blocks = options.blocks || {};
+
+    var render = options.render || 'json';
+    var tags = options.tags || {};
+
+    switch (render) {
+        case 'json':
+            render = function render(root) {
+                return root;
+            };break;
+        case 'dom':
+            render = function render(root) {
+                return document.createElement('DIV');
+            };break;
+    }
 
     return function (literals) {
         for (var _len = arguments.length, values = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -256,7 +274,7 @@ function Lou() {
 
         // If the template was cached
         if (cached !== void 0) {
-            return matchT(cached, values, { cached: true });
+            return render(matchT(cached, values, { cached: true, tags: tags }));
         }
 
         // Merge literals and values
@@ -270,7 +288,7 @@ function Lou() {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return matchT(merged, values);
+        return render(matchT(merged, values, { tags: tags }));
     };
 };
 
