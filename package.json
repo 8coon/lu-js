@@ -10,6 +10,7 @@
     "dev-server": "./node_modules/webpack-dev-server/bin/webpack-dev-server.js",
     "test": "npm run build && npm run dev-server"
   },
+  "main": "src/lou.js",
   "dependencies": {
   },
   "devDependencies": {
