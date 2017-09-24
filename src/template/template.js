@@ -27,6 +27,7 @@ export function Node(children, options) {
     this.children = children;
     this.attrs = {};
     this.cached = options && options.cached;
+    this.onRender = null;
 
     const processor = options.node;
 

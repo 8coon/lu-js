@@ -68,6 +68,11 @@ const domT = (src, parent = null, options) => {
         parent.appendChild(dst);
     }
 
+    // Call handler
+    if (src.onRender) {
+        src.onRender(dst);
+    }
+
     return dst;
 };
 
