@@ -121,7 +121,7 @@ var VALUE_MATCH = '\\x1E';
 /**
  * Template Node
  * @param {string[]|Node[]} children
- * @param {{cached: boolean}} options
+ * @param options
  * @constructor {Node}
  */
 function Node(children, options) {
@@ -129,6 +129,12 @@ function Node(children, options) {
     this.children = children;
     this.attrs = {};
     this.cached = options && options.cached;
+
+    var processor = options.node;
+
+    if (processor) {
+        return processor(this);
+    }
 }
 
 var serializeValue = function serializeValue(literal, value, idx) {
@@ -244,7 +250,8 @@ var matchT = function matchT(literal, values, options) {
 
 /**
  * @param {{
- *      render: 'json'|'dom'|function(root: Node)
+ *      render: 'json'|'dom'|function(root: Node),
+ *      node: function(node: Node): Node,
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
  *      attrs: Map<string, function(name: string, value),
  *
@@ -258,6 +265,7 @@ function Lou() {
     var render = options.render || 'json';
     var tags = options.tags || {};
     var attrs = options.attrs || {};
+    var node = options.node;
 
     switch (render) {
         case 'json':
@@ -279,7 +287,7 @@ function Lou() {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, { cached: true, tags: tags, attrs: attrs }));
+            return render(matchT(cached, values, { cached: true, tags: tags, attrs: attrs, node: node }));
         }
 
         // Merge literals and values
@@ -293,7 +301,7 @@ function Lou() {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, { tags: tags, attrs: attrs }));
+        return render(matchT(merged, values, { tags: tags, attrs: attrs, node: node }));
     };
 };
 

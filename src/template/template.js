@@ -19,7 +19,7 @@ const VALUE_MATCH = '\\x1E';
 /**
  * Template Node
  * @param {string[]|Node[]} children
- * @param {{cached: boolean}} options
+ * @param options
  * @constructor {Node}
  */
 export function Node(children, options) {
@@ -27,6 +27,12 @@ export function Node(children, options) {
     this.children = children;
     this.attrs = {};
     this.cached = options && options.cached;
+
+    const processor = options.node;
+
+    if (processor) {
+        return processor(this);
+    }
 }
 
 const serializeValue = (literal, value, idx) => {
@@ -146,7 +152,8 @@ const matchT = (literal, values, options) => {
 
 /**
  * @param {{
- *      render: 'json'|'dom'|function(root: Node)
+ *      render: 'json'|'dom'|function(root: Node),
+ *      node: function(node: Node): Node,
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
  *      attrs: Map<string, function(name: string, value),
  *
@@ -158,6 +165,7 @@ export default function Lou(options = {}) {
     let render = options.render || 'json';
     const tags = options.tags || {};
     const attrs = options.attrs || {};
+    const node = options.node;
 
     switch (render) {
         case 'json': render = root => root; break;
@@ -169,7 +177,7 @@ export default function Lou(options = {}) {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, {cached: true, tags, attrs}));
+            return render(matchT(cached, values, {cached: true, tags, attrs, node}));
         }
 
         // Merge literals and values
@@ -182,7 +190,7 @@ export default function Lou(options = {}) {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, {tags, attrs}));
+        return render(matchT(merged, values, {tags, attrs, node}));
     };
 };
 

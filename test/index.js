@@ -133,5 +133,25 @@
             expect(node.attrs.lol === 'kek', 'value is substituted');
         });
 
+        it('should call node processor', () => {
+            let called = 0;
+
+            const b = Lou({
+                node: node => {
+                    expect(node.tag === 'div', 'tag is resolved correctly');
+                    node.lol = 'kek';
+
+                    called++;
+                    return node;
+                }
+            });
+
+            const node = b`<div class="lol"><div class="kek"/></div>`;
+
+            expect(node.lol === 'kek', 'processor can modify node 1');
+            expect(node.children[0].lol === 'kek', 'processor can modify node 2');
+            expect(called === 2, 'processor is called 2 times');
+        });
+
     });
 });
