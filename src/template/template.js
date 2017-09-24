@@ -1,7 +1,6 @@
 'use strict';
 
 import Map from '../map/map';
-import domRender from '../render/dom';
 
 
 // Regexps
@@ -96,7 +95,7 @@ const tagT = match => match.match(/^([A-Za-z0-9_-]*)/)[1] || '';
 
 
 const childrenT = (content, values, options) => {
-    let matches = content.match(new RegExp(`${TAG_MATCH}.*${TAG_CLOSING_MATCH}|${TAG_SHORT_MATCH}|([^<>]*)`, 'g'));
+    let matches = content.match(new RegExp(`${TAG_MATCH}.*${TAG_CLOSING_MATCH}|${TAG_SHORT_MATCH}|${VALUE_MATCH}\\d*${VALUE_MATCH}|([^<>]*)`, 'g'));
 
     // If no suitable child found
     if (!matches) {
@@ -104,12 +103,17 @@ const childrenT = (content, values, options) => {
     }
 
     return matches
-        .map(match => matchT(match, values, options))
+        .map(match => matchT(parseValue(match, values), values, options))
         .filter(node => typeof node === 'object' || typeof node === 'string' && node.length > 0);
 };
 
 
 const matchT = (literal, values, options) => {
+    // If we got a node instance -- insert it in our JSON
+    if (literal instanceof Node) {
+        return literal;
+    }
+
     const parseTagT = (tag, content, children) => {
         const tags = options.tags;
         const attrs = attrsT(content, values, options.attrs);
@@ -153,32 +157,26 @@ const matchT = (literal, values, options) => {
 
 /**
  * @param {{
- *      render: 'JSON'|'DOM'|function(root: Node),
  *      node: function(node: Node): Node,
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
  *      attrs: Map<string, function(name: string, value),
+ *      events: boolean = false
  *
  * }} options
  */
 export default function Lou(options = {}) {
     const rendered = new Map();
 
-    let render = options.render || 'JSON';
     const tags = options.tags || {};
     const attrs = options.attrs || {};
     const node = options.node;
-
-    switch (render) {
-        case 'JSON': render = root => root; break;
-        case 'DOM': render = domRender; break;
-    }
 
     return (literals, ...values) => {
         const cached = rendered.get(literals);
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, {cached: true, tags, attrs, node}), null, options);
+            return matchT(cached, values, {cached: true, tags, attrs, node});
         }
 
         // Merge literals and values
@@ -191,8 +189,6 @@ export default function Lou(options = {}) {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, {tags, attrs, node}), null, options);
+        return matchT(merged, values, {tags, attrs, node});
     };
 };
-
-window.Lou = Lou;

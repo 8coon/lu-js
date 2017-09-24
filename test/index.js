@@ -154,12 +154,13 @@
         });
 
         it('should render to DOM', () => {
-            const b = Lou({render: 'DOM'});
+            const b = Lou();
+            const render = Lou.domRender;
 
-            const node = b`
+            const node = render(b`
                 <div class="lol kek" style="${{backgroundColor: 'black', color: 'white'}}">
                     <a href="#">Click me!</a>
-                </div>`;
+                </div>`);
 
             expect(node.tagName === 'DIV', 'tag is rendered to DOM');
             expect(node.classList.contains('lol'), 'class is rendered to DOM 1');
@@ -169,18 +170,30 @@
         });
 
         it('should render event handlers to DOM', () => {
-            const b = Lou({render: 'DOM', events: true});
+            const b = Lou();
+            const render = Lou.domRender;
             let clicked = 0;
 
-            const node = b`<button type="button" onClick="${event => {
+            const node = render(b`<button type="button" onClick="${event => {
                 expect(event.type === 'click', 'event type is click');
                 clicked++;
-            }}">Click me!</button>`;
+            }}">Click me!</button>`, {events: true});
 
             node.dispatchEvent(new Event('click'));
-            console.log(node);
+            node.dispatchEvent(new Event('click'));
             
-            expect(clicked === 1, 'event was handled');
+            expect(clicked === 2, 'event was handled');
+        });
+
+        it('should handle insertions', () => {
+            const b = Lou();
+
+            const a = b`<a href="${location.href}">Reload me!</a>`;
+            const node = b`<div class="${['nav', 'links'].join(' ')}">${a}</div>`;
+
+            expect(node.tag === 'div', 'outer node is parsed');
+            expect(node.children[0].children[0] === 'Reload me!', 'inner node is parsed 1');
+            expect(node.children[0].attrs.href === location.href, 'inner node is parsed 2');
         });
 
     });

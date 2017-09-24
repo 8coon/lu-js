@@ -13,7 +13,7 @@ const sanitize = string => string
 /**
  * @param {Node} src
  * @param parent = null
- * @param options
+ * @param {{events: boolean = false}} options
  */
 const domT = (src, parent = null, options) => {
     // We're handling text node
@@ -71,4 +71,8 @@ const domT = (src, parent = null, options) => {
     return dst;
 };
 
-export default domT;
+/**
+ * @param {Node} root
+ * @param {{events: boolean = false}} options
+ */
+export default (root, options = {}) => domT(root, null, options);

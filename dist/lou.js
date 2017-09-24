@@ -78,9 +78,17 @@ var _template = __webpack_require__(1);
 
 var _template2 = _interopRequireDefault(_template);
 
+var _dom = __webpack_require__(3);
+
+var _dom2 = _interopRequireDefault(_dom);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 exports.default = _template2.default;
+
+
+_template2.default.domRender = _dom2.default;
+window.Lou = _template2.default;
 
 /***/ }),
 /* 1 */
@@ -101,10 +109,6 @@ exports.default = Lou;
 var _map = __webpack_require__(2);
 
 var _map2 = _interopRequireDefault(_map);
-
-var _dom = __webpack_require__(3);
-
-var _dom2 = _interopRequireDefault(_dom);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -197,7 +201,7 @@ var tagT = function tagT(match) {
 };
 
 var childrenT = function childrenT(content, values, options) {
-    var matches = content.match(new RegExp(TAG_MATCH + '.*' + TAG_CLOSING_MATCH + '|' + TAG_SHORT_MATCH + '|([^<>]*)', 'g'));
+    var matches = content.match(new RegExp(TAG_MATCH + '.*' + TAG_CLOSING_MATCH + '|' + TAG_SHORT_MATCH + '|' + VALUE_MATCH + '\\d*' + VALUE_MATCH + '|([^<>]*)', 'g'));
 
     // If no suitable child found
     if (!matches) {
@@ -205,13 +209,18 @@ var childrenT = function childrenT(content, values, options) {
     }
 
     return matches.map(function (match) {
-        return matchT(match, values, options);
+        return matchT(parseValue(match, values), values, options);
     }).filter(function (node) {
         return (typeof node === 'undefined' ? 'undefined' : _typeof(node)) === 'object' || typeof node === 'string' && node.length > 0;
     });
 };
 
 var matchT = function matchT(literal, values, options) {
+    // If we got a node instance -- insert it in our JSON
+    if (literal instanceof Node) {
+        return literal;
+    }
+
     var parseTagT = function parseTagT(tag, content, children) {
         var tags = options.tags;
         var attrs = attrsT(content, values, options.attrs);
@@ -254,10 +263,10 @@ var matchT = function matchT(literal, values, options) {
 
 /**
  * @param {{
- *      render: 'JSON'|'DOM'|function(root: Node),
  *      node: function(node: Node): Node,
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
  *      attrs: Map<string, function(name: string, value),
+ *      events: boolean = false
  *
  * }} options
  */
@@ -266,19 +275,9 @@ function Lou() {
 
     var rendered = new _map2.default();
 
-    var render = options.render || 'JSON';
     var tags = options.tags || {};
     var attrs = options.attrs || {};
     var node = options.node;
-
-    switch (render) {
-        case 'JSON':
-            render = function render(root) {
-                return root;
-            };break;
-        case 'DOM':
-            render = _dom2.default;break;
-    }
 
     return function (literals) {
         for (var _len = arguments.length, values = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -289,7 +288,7 @@ function Lou() {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, { cached: true, tags: tags, attrs: attrs, node: node }), null, options);
+            return matchT(cached, values, { cached: true, tags: tags, attrs: attrs, node: node });
         }
 
         // Merge literals and values
@@ -303,11 +302,9 @@ function Lou() {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, { tags: tags, attrs: attrs, node: node }), null, options);
+        return matchT(merged, values, { tags: tags, attrs: attrs, node: node });
     };
 };
-
-window.Lou = Lou;
 
 /***/ }),
 /* 2 */
@@ -402,7 +399,7 @@ var sanitize = function sanitize(string) {
 /**
  * @param {Node} src
  * @param parent = null
- * @param options
+ * @param {{events: boolean = false}} options
  */
 var domT = function domT(src) {
     var parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
@@ -467,7 +464,15 @@ var domT = function domT(src) {
     return dst;
 };
 
-exports.default = domT;
+/**
+ * @param {Node} root
+ * @param {{events: boolean = false}} options
+ */
+
+exports.default = function (root) {
+    var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+    return domT(root, null, options);
+};
 
 /***/ })
 /******/ ]);
