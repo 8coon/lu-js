@@ -1,8 +1,10 @@
 {
-  "name": "lou.js",
-  "description": "lou.js -- simple js template engine",
+  "name": "lou",
+  "description": "Lou -- simple js template engine",
   "version": "0.1.0",
   "repository": "https://github.com/8coon/lu-js",
+  "author": "Kaibito Young",
+  "license": "MIT",
   "scripts": {
     "build": "./node_modules/webpack/bin/webpack.js && ./node_modules/webpack/bin/webpack.js --config webpack.config.minified.js",
     "dev-server": "./node_modules/webpack-dev-server/bin/webpack-dev-server.js",
