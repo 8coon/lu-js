@@ -39,7 +39,7 @@ const render = Lou.domRender;
 
 ```js
 const domElement = render(b`
-    <div class="${['lol', 'kek'].join(' ')}" style="${{backgroundColor: 'black'}}"\>
+    <div class="${['lol', 'kek'].join(' ')}" style="${{backgroundColor: 'black'}}">
         <a href="${location.href}" target="blank">Открой меня в новой вкладке!</a>
     </div>`);
 ```
@@ -119,6 +119,5 @@ const users = [
 const node = b`
     <div>
         ${users.map(user => b`<Avatar user="${user}"/>`)}
-    </div>
-`;
+    </div>`;
 ```

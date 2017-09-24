@@ -207,5 +207,77 @@
             expect(node.children[1].children[0] === 'Bob', 'Bob is rendered');
         });
 
+
+        it('should work as in readme 1', () => {
+            const b = Lou();
+            const render = Lou.domRender;
+
+            const d = render(b`
+                <div class="${['lol', 'kek'].join(' ')}" style="${{backgroundColor: 'black'}}">
+                    <a href="${location.href}" target="blank">Открой меня в новой вкладке!</a>
+                </div>`);
+
+            expect(d.classList.contains('lol'), 'classes are rendered 1');
+            expect(d.classList.contains('kek'), 'classes are rendered 2');
+            expect(d.style.backgroundColor === 'black', 'style is rendered');
+            expect(d.querySelector(
+                `a[href="${location.href}"]`).childNodes[0].textContent === 'Открой меня в новой вкладке',
+                'children are rendered');
+        });
+
+        it('should work as in readme 2', () => {
+            const b = Lou();
+            const render = Lou.domRender;
+            let clicked = 0;
+
+            const clickHandler = (event) => {
+                clicked++;
+            };
+
+            const d = render(b`
+                <button type="button" onClick="${clickHandler}">Click me!</button>`, {events: true});
+
+            d.dispatchEvent(new Event('click'));
+
+            expect(clicked === 1, 'event is handled');
+        });
+
+        it('should work as in readme 3', () => {
+            const b = Lou({
+                tags: {
+                    'Avatar': (name, attrs, children) => {
+                        return b`
+                            <div class="avatar">
+                                <img alt="${'avatars_' + attrs.user.id}"/>
+                                <div class="avatar__text">
+                                    ${attrs.user.name}
+                                </div>
+                            </div>`;
+                    }
+                }
+            });
+
+            const users = [
+                {name: 'Alice', id: 1},
+                {name: 'Bob', id: 2},
+            ];
+
+            const node = b`
+                <div>
+                    ${users.map(user => b`<Avatar user="${user}"/>`)}
+                </div>`;
+
+            const d = Lou.domRender(node);
+
+            const called = [...d.querySelectorAll('.avatar')].reduce((called, el, idx) => {
+                expect(el.querySelector('img').src === `avatars_${idx + 1}`);
+                expect(el.querySelector('div').textContent === users[idx].name);
+
+                return ++called;
+            });
+
+            expect(called === 2);
+        })
+
     });
 });

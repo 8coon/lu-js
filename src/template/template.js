@@ -95,7 +95,7 @@ const tagT = match => match.match(/^([A-Za-z0-9_-]*)/)[1] || '';
 
 
 const childrenT = (content, values, options) => {
-    let matches = content.match(new RegExp(`${TAG_MATCH}.*${TAG_CLOSING_MATCH}|${TAG_SHORT_MATCH}|${VALUE_MATCH}\\d*${VALUE_MATCH}|([^<>]*)`, 'g'));
+    let matches = content.match(new RegExp(`${TAG_SHORT_MATCH}|${TAG_MATCH}.*${TAG_CLOSING_MATCH}|${VALUE_MATCH}\\d*${VALUE_MATCH}|([^<>]*)`, 'g'));
 
     // If no suitable child found
     if (!matches) {
@@ -142,13 +142,13 @@ const matchT = (literal, values, options) => {
     let matches;
 
     // If we got a self-closing tag
-    matches = literal.match(new RegExp(`^\\s*${TAG_SHORT_NAME_MATCH}\\s*$`));
+    matches = literal.match(new RegExp(`^${TAG_SHORT_NAME_MATCH}`));
     if (matches) {
         return parseTagT(tagT(matches[1]), matches[1]);
     }
 
     // We got a normal tag probably with a content
-    matches = literal.match(new RegExp(`^\\s*${TAG_NAME_MATCH}(.*)${TAG_CLOSING_NAME_MATCH}\\s*$`));
+    matches = literal.match(new RegExp(`^${TAG_NAME_MATCH}(.*)${TAG_CLOSING_NAME_MATCH}$`));
     let tagName;
 
     if (matches && matches[1]) {

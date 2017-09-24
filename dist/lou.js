@@ -158,8 +158,6 @@ var serializeValue = function serializeValue(literal, value, idx, values) {
 var parseValue = function parseValue(value, values) {
     var matches = value.match(new RegExp('^' + VALUE_MATCH + '(\\d*)' + VALUE_MATCH + '$'));
 
-    console.log(value, matches);
-
     // If value is plain text
     if (!matches) {
         return value;
@@ -205,7 +203,7 @@ var tagT = function tagT(match) {
 };
 
 var childrenT = function childrenT(content, values, options) {
-    var matches = content.match(new RegExp(TAG_MATCH + '.*' + TAG_CLOSING_MATCH + '|' + TAG_SHORT_MATCH + '|' + VALUE_MATCH + '\\d*' + VALUE_MATCH + '|([^<>]*)', 'g'));
+    var matches = content.match(new RegExp(TAG_SHORT_MATCH + '|' + TAG_MATCH + '.*' + TAG_CLOSING_MATCH + '|' + VALUE_MATCH + '\\d*' + VALUE_MATCH + '|([^<>]*)', 'g'));
 
     // If no suitable child found
     if (!matches) {
@@ -252,13 +250,13 @@ var matchT = function matchT(literal, values, options) {
     var matches = void 0;
 
     // If we got a self-closing tag
-    matches = literal.match(new RegExp('^\\s*' + TAG_SHORT_NAME_MATCH + '\\s*$'));
+    matches = literal.match(new RegExp('^' + TAG_SHORT_NAME_MATCH));
     if (matches) {
         return parseTagT(tagT(matches[1]), matches[1]);
     }
 
     // We got a normal tag probably with a content
-    matches = literal.match(new RegExp('^\\s*' + TAG_NAME_MATCH + '(.*)' + TAG_CLOSING_NAME_MATCH + '\\s*$'));
+    matches = literal.match(new RegExp('^' + TAG_NAME_MATCH + '(.*)' + TAG_CLOSING_NAME_MATCH + '$'));
     var tagName = void 0;
 
     if (matches && matches[1]) {
