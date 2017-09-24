@@ -13,8 +13,9 @@ const sanitize = string => string
 /**
  * @param {Node} src
  * @param parent = null
+ * @param options
  */
-const domT = (src, parent = null) => {
+const domT = (src, parent = null, options) => {
     // We're handling text node
     if (typeof src !== 'object') {
         const text = sanitize(String(src));
@@ -29,10 +30,18 @@ const domT = (src, parent = null) => {
     }
 
     const dst = document.createElement(src.tag);
+    const events = options.events;
+    let handlers;
+
+    // Creating event handlers map
+    if (events) {
+        dst.__lou_handlers__ = dst.__lou_handlers__ || {};
+        handlers = dst.__lou_handlers__;
+    }
 
     // Render attributes
     Object.keys(src.attrs).forEach(name => {
-        const value = src.attrs[name];
+        let value = src.attrs[name];
 
         // Processing inline styles separately
         if (name === 'style') {
@@ -40,11 +49,19 @@ const domT = (src, parent = null) => {
             return;
         }
 
+        // Processing event handlers
+        const lowerName = name.toLowerCase();
+        if (events && lowerName.startsWith('on')) {
+            handlers[lowerName] = value;
+
+            value = `this.__lou_handlers__['${lowerName}'](event)`;
+        }
+
         dst.setAttribute(name, value);
     });
 
     // Render children
-    src.children.forEach(child => domT(child, dst));
+    src.children.forEach(child => domT(child, dst, options));
 
     // Append to parent
     if (parent) {

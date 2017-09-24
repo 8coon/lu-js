@@ -168,5 +168,20 @@
             expect(node.querySelector('a').childNodes.item(0).textContent === 'Click me!', 'text is rendered to DOM');
         });
 
+        it('should render event handlers to DOM', () => {
+            const b = Lou({render: 'DOM', events: true});
+            let clicked = 0;
+
+            const node = b`<button type="button" onClick="${event => {
+                expect(event.type === 'click', 'event type is click');
+                clicked++;
+            }}">Click me!</button>`;
+
+            node.dispatchEvent(new Event('click'));
+            console.log(node);
+            
+            expect(clicked === 1, 'event was handled');
+        });
+
     });
 });

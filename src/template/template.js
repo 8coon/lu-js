@@ -178,7 +178,7 @@ export default function Lou(options = {}) {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, {cached: true, tags, attrs, node}));
+            return render(matchT(cached, values, {cached: true, tags, attrs, node}), null, options);
         }
 
         // Merge literals and values
@@ -191,7 +191,7 @@ export default function Lou(options = {}) {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, {tags, attrs, node}));
+        return render(matchT(merged, values, {tags, attrs, node}), null, options);
     };
 };
 

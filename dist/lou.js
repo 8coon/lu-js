@@ -289,7 +289,7 @@ function Lou() {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, { cached: true, tags: tags, attrs: attrs, node: node }));
+            return render(matchT(cached, values, { cached: true, tags: tags, attrs: attrs, node: node }), null, options);
         }
 
         // Merge literals and values
@@ -303,7 +303,7 @@ function Lou() {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, { tags: tags, attrs: attrs, node: node }));
+        return render(matchT(merged, values, { tags: tags, attrs: attrs, node: node }), null, options);
     };
 };
 
@@ -402,9 +402,11 @@ var sanitize = function sanitize(string) {
 /**
  * @param {Node} src
  * @param parent = null
+ * @param options
  */
 var domT = function domT(src) {
     var parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+    var options = arguments[2];
 
     // We're handling text node
     if ((typeof src === 'undefined' ? 'undefined' : _typeof(src)) !== 'object') {
@@ -420,6 +422,14 @@ var domT = function domT(src) {
     }
 
     var dst = document.createElement(src.tag);
+    var events = options.events;
+    var handlers = void 0;
+
+    // Creating event handlers map
+    if (events) {
+        dst.__lou_handlers__ = dst.__lou_handlers__ || {};
+        handlers = dst.__lou_handlers__;
+    }
 
     // Render attributes
     Object.keys(src.attrs).forEach(function (name) {
@@ -433,12 +443,20 @@ var domT = function domT(src) {
             return;
         }
 
+        // Processing event handlers
+        var lowerName = name.toLowerCase();
+        if (events && lowerName.startsWith('on')) {
+            handlers[lowerName] = value;
+
+            value = 'this.__lou_handlers__[\'' + lowerName + '\'](event)';
+        }
+
         dst.setAttribute(name, value);
     });
 
     // Render children
     src.children.forEach(function (child) {
-        return domT(child, dst);
+        return domT(child, dst, options);
     });
 
     // Append to parent
