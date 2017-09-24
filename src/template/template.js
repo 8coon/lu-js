@@ -41,7 +41,7 @@ const serializeValue = (literal, value, idx) => {
 const parseValue = (value, values) => {
     const matches = value.match(new RegExp(`^${VALUE_MATCH}(\\d*)${VALUE_MATCH}$`));
 
-    // If value vas plain text
+    // If value is plain text
     if (!matches) {
         return value;
     }
@@ -50,7 +50,7 @@ const parseValue = (value, values) => {
 };
 
 
-const attrsT = (match, values) => {
+const attrsT = (match, values, attrs) => {
     let matches = match.match(/(?:(?=")(".*?")|([\w=]*))/g);
 
     return matches
@@ -61,9 +61,11 @@ const attrsT = (match, values) => {
                 return props;
             }
 
+            const valueT = attrs[match];
+
             // Property without a value
             if (!match.endsWith('=')) {
-                return Object.assign(props, {[match]: true});
+                return Object.assign(props, {[match]: valueT ? valueT(match, true) : true});
             }
 
             let nextMatch = array[idx + 1] || '';
@@ -75,9 +77,10 @@ const attrsT = (match, values) => {
             }
 
             const key = match.substring(0, match.length - 1);
-            const value = parseValue(nextMatch, values);
+            const value = parseValue(nextMatch, values, attrs);
+            const nextValueT = attrs[key];
 
-            return Object.assign(props, {[key]: value});
+            return Object.assign(props, {[key]: nextValueT ? nextValueT(key, value): value});
         }, {});
 };
 
@@ -102,7 +105,7 @@ const childrenT = (content, values, options) => {
 const matchT = (literal, values, options) => {
     const parseTagT = (tag, content, children) => {
         const tags = options.tags;
-        const attrs = attrsT(content, values);
+        const attrs = attrsT(content, values, options.attrs);
 
         if (tags[tag]) {
             return (tags[tag])(tag, attrs, children);
@@ -145,6 +148,7 @@ const matchT = (literal, values, options) => {
  * @param {{
  *      render: 'json'|'dom'|function(root: Node)
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
+ *      attrs: Map<string, function(name: string, value),
  *
  * }} options
  */
@@ -153,6 +157,7 @@ export default function Lou(options = {}) {
 
     let render = options.render || 'json';
     const tags = options.tags || {};
+    const attrs = options.attrs || {};
 
     switch (render) {
         case 'json': render = root => root; break;
@@ -164,7 +169,7 @@ export default function Lou(options = {}) {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, {cached: true, tags}));
+            return render(matchT(cached, values, {cached: true, tags, attrs}));
         }
 
         // Merge literals and values
@@ -177,7 +182,7 @@ export default function Lou(options = {}) {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, {tags}));
+        return render(matchT(merged, values, {tags, attrs}));
     };
 };
 

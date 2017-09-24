@@ -111,7 +111,26 @@
             });
 
             const node = b`<div class="${'lol kek cheburek'}">k</div>`;
+
             expect(node === 'lol kek cheburek');
+        });
+
+        it('should call attribute substitution function', () => {
+            const kek = {kek: true};
+
+            const b = Lou({
+                attrs: {
+                    'lol': (name, value) => {
+                        expect(name === 'lol', 'name is resolved correctly');
+                        expect(value === kek, 'value is resolved correctly');
+                        return 'kek';
+                    }
+                }
+            });
+
+            const node = b`<div lol="${kek}"/>`;
+
+            expect(node.attrs.lol === 'kek', 'value is substituted');
         });
 
     });

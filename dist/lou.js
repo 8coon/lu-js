@@ -142,7 +142,7 @@ var serializeValue = function serializeValue(literal, value, idx) {
 var parseValue = function parseValue(value, values) {
     var matches = value.match(new RegExp('^' + VALUE_MATCH + '(\\d*)' + VALUE_MATCH + '$'));
 
-    // If value vas plain text
+    // If value is plain text
     if (!matches) {
         return value;
     }
@@ -150,7 +150,7 @@ var parseValue = function parseValue(value, values) {
     return values[parseInt(matches[1], 10)];
 };
 
-var attrsT = function attrsT(match, values) {
+var attrsT = function attrsT(match, values, attrs) {
     var matches = match.match(/(?:(?=")(".*?")|([\w=]*))/g);
 
     return matches.slice(1).reduce(function (props, match, idx, array) {
@@ -159,9 +159,11 @@ var attrsT = function attrsT(match, values) {
             return props;
         }
 
+        var valueT = attrs[match];
+
         // Property without a value
         if (!match.endsWith('=')) {
-            return Object.assign(props, _defineProperty({}, match, true));
+            return Object.assign(props, _defineProperty({}, match, valueT ? valueT(match, true) : true));
         }
 
         var nextMatch = array[idx + 1] || '';
@@ -173,9 +175,10 @@ var attrsT = function attrsT(match, values) {
         }
 
         var key = match.substring(0, match.length - 1);
-        var value = parseValue(nextMatch, values);
+        var value = parseValue(nextMatch, values, attrs);
+        var nextValueT = attrs[key];
 
-        return Object.assign(props, _defineProperty({}, key, value));
+        return Object.assign(props, _defineProperty({}, key, nextValueT ? nextValueT(key, value) : value));
     }, {});
 };
 
@@ -201,7 +204,7 @@ var childrenT = function childrenT(content, values, options) {
 var matchT = function matchT(literal, values, options) {
     var parseTagT = function parseTagT(tag, content, children) {
         var tags = options.tags;
-        var attrs = attrsT(content, values);
+        var attrs = attrsT(content, values, options.attrs);
 
         if (tags[tag]) {
             return tags[tag](tag, attrs, children);
@@ -243,6 +246,7 @@ var matchT = function matchT(literal, values, options) {
  * @param {{
  *      render: 'json'|'dom'|function(root: Node)
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
+ *      attrs: Map<string, function(name: string, value),
  *
  * }} options
  */
@@ -253,6 +257,7 @@ function Lou() {
 
     var render = options.render || 'json';
     var tags = options.tags || {};
+    var attrs = options.attrs || {};
 
     switch (render) {
         case 'json':
@@ -274,7 +279,7 @@ function Lou() {
 
         // If the template was cached
         if (cached !== void 0) {
-            return render(matchT(cached, values, { cached: true, tags: tags }));
+            return render(matchT(cached, values, { cached: true, tags: tags, attrs: attrs }));
         }
 
         // Merge literals and values
@@ -288,7 +293,7 @@ function Lou() {
         rendered.set(literals, merged);
 
         // Parse the whole thing
-        return render(matchT(merged, values, { tags: tags }));
+        return render(matchT(merged, values, { tags: tags, attrs: attrs }));
     };
 };
 
