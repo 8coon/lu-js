@@ -1,6 +1,7 @@
 'use strict';
 
 import Map from '../map/map';
+import domRender from '../render/dom';
 
 
 // Regexps
@@ -152,7 +153,7 @@ const matchT = (literal, values, options) => {
 
 /**
  * @param {{
- *      render: 'json'|'dom'|function(root: Node),
+ *      render: 'JSON'|'DOM'|function(root: Node),
  *      node: function(node: Node): Node,
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
  *      attrs: Map<string, function(name: string, value),
@@ -162,14 +163,14 @@ const matchT = (literal, values, options) => {
 export default function Lou(options = {}) {
     const rendered = new Map();
 
-    let render = options.render || 'json';
+    let render = options.render || 'JSON';
     const tags = options.tags || {};
     const attrs = options.attrs || {};
     const node = options.node;
 
     switch (render) {
-        case 'json': render = root => root; break;
-        case 'dom': render = root => document.createElement('DIV'); break;
+        case 'JSON': render = root => root; break;
+        case 'DOM': render = domRender; break;
     }
 
     return (literals, ...values) => {
@@ -182,7 +183,7 @@ export default function Lou(options = {}) {
 
         // Merge literals and values
         const merged = literals
-            .map(literal => literal.replace(new RegExp(`${VALUE_MATCH}\\r\\n`), ''))
+            .map(literal => literal.trim().replace(new RegExp(`[${VALUE_MATCH}\\r\\n\\t]`, 'g'), ''))
             .map((literal, idx) => literal + serializeValue(literal, values[idx], idx))
             .join('');
 

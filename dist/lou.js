@@ -102,6 +102,10 @@ var _map = __webpack_require__(2);
 
 var _map2 = _interopRequireDefault(_map);
 
+var _dom = __webpack_require__(3);
+
+var _dom2 = _interopRequireDefault(_dom);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
@@ -250,7 +254,7 @@ var matchT = function matchT(literal, values, options) {
 
 /**
  * @param {{
- *      render: 'json'|'dom'|function(root: Node),
+ *      render: 'JSON'|'DOM'|function(root: Node),
  *      node: function(node: Node): Node,
  *      tags: Map<string, function(name: string, attrs: object, children: Node[]): Node>,
  *      attrs: Map<string, function(name: string, value),
@@ -262,20 +266,18 @@ function Lou() {
 
     var rendered = new _map2.default();
 
-    var render = options.render || 'json';
+    var render = options.render || 'JSON';
     var tags = options.tags || {};
     var attrs = options.attrs || {};
     var node = options.node;
 
     switch (render) {
-        case 'json':
+        case 'JSON':
             render = function render(root) {
                 return root;
             };break;
-        case 'dom':
-            render = function render(root) {
-                return document.createElement('DIV');
-            };break;
+        case 'DOM':
+            render = _dom2.default;break;
     }
 
     return function (literals) {
@@ -292,7 +294,7 @@ function Lou() {
 
         // Merge literals and values
         var merged = literals.map(function (literal) {
-            return literal.replace(new RegExp(VALUE_MATCH + '\\r\\n'), '');
+            return literal.trim().replace(new RegExp('[' + VALUE_MATCH + '\\r\\n\\t]', 'g'), '');
         }).map(function (literal, idx) {
             return literal + serializeValue(literal, values[idx], idx);
         }).join('');
@@ -369,6 +371,85 @@ Object.assign(ArrayMap.prototype, {
 });
 
 exports.default = ArrayMap;
+
+/***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var charMap = {
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    '&': '&amp;',
+    '\'': '&#39;'
+};
+
+var sanitize = function sanitize(string) {
+    return string.replace(/[<>'"&]/g, function (match) {
+        return charMap[match];
+    });
+};
+
+/**
+ * @param {Node} src
+ * @param parent = null
+ */
+var domT = function domT(src) {
+    var parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+
+    // We're handling text node
+    if ((typeof src === 'undefined' ? 'undefined' : _typeof(src)) !== 'object') {
+        var text = sanitize(String(src));
+        var _dst = document.createTextNode(text);
+
+        // Append to parent
+        if (parent) {
+            parent.appendChild(_dst);
+        }
+
+        return _dst;
+    }
+
+    var dst = document.createElement(src.tag);
+
+    // Render attributes
+    Object.keys(src.attrs).forEach(function (name) {
+        var value = src.attrs[name];
+
+        // Processing inline styles separately
+        if (name === 'style') {
+            Object.keys(value).forEach(function (propName) {
+                return dst.style[propName] = value[propName];
+            });
+            return;
+        }
+
+        dst.setAttribute(name, value);
+    });
+
+    // Render children
+    src.children.forEach(function (child) {
+        return domT(child, dst);
+    });
+
+    // Append to parent
+    if (parent) {
+        parent.appendChild(dst);
+    }
+
+    return dst;
+};
+
+exports.default = domT;
 
 /***/ })
 /******/ ]);

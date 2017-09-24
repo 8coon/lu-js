@@ -153,5 +153,20 @@
             expect(called === 2, 'processor is called 2 times');
         });
 
+        it('should render to DOM', () => {
+            const b = Lou({render: 'DOM'});
+
+            const node = b`
+                <div class="lol kek" style="${{backgroundColor: 'black', color: 'white'}}">
+                    <a href="#">Click me!</a>
+                </div>`;
+
+            expect(node.tagName === 'DIV', 'tag is rendered to DOM');
+            expect(node.classList.contains('lol'), 'class is rendered to DOM 1');
+            expect(node.classList.contains('kek'), 'class is rendered to DOM 2');
+            expect(node.querySelector('a').href === '#', 'child is rendered to DOM');
+            expect(node.querySelector('a').childNodes.item(0).textContent === 'Click me!', 'text is rendered to DOM');
+        });
+
     });
 });
